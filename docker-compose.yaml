@@ -31,6 +31,27 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: bitnamilegacy/minio:latest
+    container_name: p1_minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: ${MINIO_BUCKET}
+      MINIO_BROWSER: "on"
+      MINIO_CONSOLE_PORT_NUMBER: "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres_data:
   postgres_meta:
+  minio_data:
