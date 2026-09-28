@@ -1,3 +1,30 @@
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.3-python3.11
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_META_USER}:${POSTGRES_META_PASSWORD}@postgres_meta/${POSTGRES_META_DB}
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    DATA_DB_CONN: postgresql+psycopg2://${POSTGRES_DATA_USER}:${POSTGRES_DATA_PASSWORD}@postgres_data:5432/${POSTGRES_DATA_DB}
+    DATA_API_URL: ${DATA_API_URL}
+    GROUP_NUMBER: ${GROUP_NUMBER}
+    MINIO_ENDPOINT: http://minio:9000
+    MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+    MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    MINIO_BUCKET: ${MINIO_BUCKET}
+    _PIP_ADDITIONAL_REQUIREMENTS: scikit-learn pandas joblib boto3 requests
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+  user: "${AIRFLOW_UID}:0"
+  depends_on:
+    postgres_meta:
+      condition: service_healthy
+    postgres_data:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+
 services:
 
   postgres_data:
@@ -50,6 +77,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: p1_airflow_init
+    command: bash -c "airflow db migrate && airflow users create --username airflow --password airflow --firstname Daniel --lastname Nino --role Admin --email admin@example.com"
+    restart: "no"
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: p1_airflow_scheduler
+    command: scheduler
+    restart: always
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: p1_airflow_webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: always
 
 volumes:
   postgres_data:
