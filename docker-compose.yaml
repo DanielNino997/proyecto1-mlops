@@ -1,0 +1,36 @@
+services:
+
+  postgres_data:
+    image: postgres:14
+    container_name: p1_postgres_data
+    environment:
+      POSTGRES_USER: ${POSTGRES_DATA_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_DATA_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATA_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_DATA_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres_meta:
+    image: postgres:14
+    container_name: p1_postgres_meta
+    environment:
+      POSTGRES_USER: ${POSTGRES_META_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_META_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_META_DB}
+    volumes:
+      - postgres_meta:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_META_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  postgres_meta:
